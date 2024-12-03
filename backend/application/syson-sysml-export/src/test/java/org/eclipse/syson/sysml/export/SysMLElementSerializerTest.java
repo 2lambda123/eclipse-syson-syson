@@ -21,6 +21,8 @@ import java.util.List;
 import org.eclipse.syson.sysml.ActionDefinition;
 import org.eclipse.syson.sysml.ActionUsage;
 import org.eclipse.syson.sysml.ActorMembership;
+import org.eclipse.syson.sysml.AllocationDefinition;
+import org.eclipse.syson.sysml.AllocationUsage;
 import org.eclipse.syson.sysml.Annotation;
 import org.eclipse.syson.sysml.AttributeDefinition;
 import org.eclipse.syson.sysml.AttributeUsage;
@@ -1254,6 +1256,110 @@ public class SysMLElementSerializerTest {
                     actor partU_1;
                 }""", useCaseDefinition);
 
+    }
+
+    @DisplayName("AllocationDefinition")
+    @Test
+    public void allocationDefinition() {
+        AllocationDefinition allocationDefinition = this.builder.createWithName(AllocationDefinition.class, "ad_1");
+
+        this.assertTextualFormEquals("allocation def ad_1;", allocationDefinition);
+    }
+
+    @DisplayName("AllocationDefinition containing a part")
+    @Test
+    public void allocationDefinitionWithContainedEnd() {
+        AllocationDefinition allocationDefinition = this.builder.createWithName(AllocationDefinition.class, "ad_1");
+        this.builder.createInWithName(PartUsage.class, allocationDefinition, "part_1");
+
+        this.assertTextualFormEquals("""
+                allocation def ad_1 {
+                    ref part part_1;
+                }""", allocationDefinition);
+    }
+
+    @DisplayName("AllocationUsage")
+    @Test
+    public void allocationUsage() {
+        AllocationUsage allocationUsage = this.builder.createWithName(AllocationUsage.class, "au_1");
+        this.builder.createInWithName(PartUsage.class, allocationUsage, "part_1");
+
+        this.assertTextualFormEquals("""
+                ref allocation au_1 {
+                    ref part part_1;
+                }""", allocationUsage);
+    }
+
+    @DisplayName("AllocationUsageWithDef")
+    @Test
+    public void allocationUsageWithDef() {
+        AllocationDefinition allocationDefinition = this.builder.createWithName(AllocationDefinition.class, "ad_1");
+
+        AllocationUsage allocationUsage = this.builder.createWithName(AllocationUsage.class, "au_1");
+        this.builder.createInWithName(PartUsage.class, allocationUsage, "part_1");
+
+        this.builder.setType(allocationUsage, allocationDefinition);
+
+        this.assertTextualFormEquals("""
+                ref allocation au_1 : ad_1 {
+                    ref part part_1;
+                }""", allocationUsage);
+    }
+
+    @DisplayName("AllocationUsageWithBasicAllocate")
+    @Test
+    public void allocationUsageWithBasicAllocate() {
+        AllocationDefinition allocationDefinition = this.builder.createWithName(AllocationDefinition.class, "ad_1");
+
+        AllocationUsage allocationUsage = this.builder.createWithName(AllocationUsage.class, "au_1");
+        var source  = this.builder.createWithName(PartUsage.class, "part_1");
+        var target = this.builder.createWithName(PartUsage.class, "part_2");
+        allocationUsage.getSource().add(source);
+        allocationUsage.getTarget().add(target);
+
+
+        this.assertTextualFormEquals("""
+                ref allocation au_1 allocate part_1 to part_2;""", allocationUsage);
+    }
+
+    @DisplayName("AllocationUsageWithBasicAllocateAndDef")
+    @Test
+    public void allocationUsageWithBasicAllocateAndDef() {
+        AllocationDefinition allocationDefinition = this.builder.createWithName(AllocationDefinition.class, "ad_1");
+
+        AllocationUsage allocationUsage = this.builder.createWithName(AllocationUsage.class, "au_1");
+        var source  = this.builder.createWithName(PartUsage.class, "part_1");
+        var target = this.builder.createWithName(PartUsage.class, "part_2");
+        allocationUsage.getSource().add(source);
+        allocationUsage.getTarget().add(target);
+
+        this.builder.setType(allocationUsage, allocationDefinition);
+
+        this.assertTextualFormEquals("""
+                ref allocation au_1 : ad_1 allocate part_1 to part_2;""", allocationUsage);
+    }
+
+    @DisplayName("AllocationUsageWithStandardAllocate")
+    @Test
+    public void allocationUsageWithStandardAllocate() {
+        AllocationDefinition allocationDefinition = this.builder.createWithName(AllocationDefinition.class, "ad_1");
+        var defSource = this.builder.createInWithName(PartUsage.class, allocationDefinition, "source");
+        var defTarget = this.builder.createInWithName(PartUsage.class, allocationDefinition, "target");
+
+        AllocationUsage allocationUsage = this.builder.createWithName(AllocationUsage.class, "au_1");
+        var source  = this.builder.createWithName(PartUsage.class, "part_1");
+        var target = this.builder.createWithName(PartUsage.class, "part_2");
+        allocationUsage.getSource().add(source);
+        allocationUsage.getTarget().add(target);
+
+        this.builder.setType(allocationUsage, allocationDefinition);
+
+        this.assertTextualFormEquals("""
+                ref allocation au_1 : ad_1 allocate (
+                    source ::> part_A,
+                    target ::> part_B
+                )
+                """, allocationUsage);
     }
 
     @DisplayName("ActionUsage with simple succession with owned sub-actions")
